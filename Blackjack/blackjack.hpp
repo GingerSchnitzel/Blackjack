@@ -3,8 +3,13 @@
 
 #include <iostream>
 #include <array>
+#include <vector>
+#include <algorithm>
+#include <random>
 
-namespace Deck
+
+
+namespace Cards
 {
 
 	enum Rank
@@ -37,41 +42,114 @@ namespace Deck
 		max_suits
 	};
 
-	static constexpr std::array allRanks{ rank_ace, rank_2, rank_3, rank_4, rank_5, rank_6, rank_7, rank_8, rank_9, rank_10, rank_jack, rank_queen, rank_king };
-	static constexpr std::array allSuits{ suit_club, suit_diamond, suit_heart, suit_spade };
+	static constexpr std::array<Cards::Rank, Cards::max_ranks> allRanks{ rank_ace, rank_2, rank_3, rank_4, rank_5, rank_6, rank_7, rank_8, rank_9, rank_10, rank_jack, rank_queen, rank_king };
+	static constexpr std::array<Cards::Suit, Cards::max_suits> allSuits{ suit_club, suit_diamond, suit_heart, suit_spade };
+	static constexpr std::array<int32_t, Cards::max_ranks> rankValues{ 11, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10 };
 
 }
+class Card;
+int32_t rankValue(Cards::Rank rank);
+std::vector<Card> makeDeck();
 
 class Card
 {
 private:
-	const Deck::Rank rank;
-	const Deck::Suit suit;
+	// need to be not-const in order to be able to be swapped around
+	Cards::Rank rank;
+	Cards::Suit suit;
+	int32_t value;
 
 public:
-	Card(Deck::Rank rank, Deck::Suit suit)
+	Card(Cards::Rank rank, Cards::Suit suit)
 		: rank{ rank }
 		, suit{ suit }
+		, value{ rankValue(rank) }
 	{
 
 	}
 
-	int32_t value() const
+	Cards::Rank getRank()
 	{
-		static constexpr std::array<int32_t, Deck::max_ranks> rankValues{ 11, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10 };
-		return rankValues[rank];
+		return rank;
 	}
+
+	Cards::Suit getSuit()
+	{
+		return suit;
+	}
+
+	int32_t getValue()
+	{
+		return value;
+	}
+
 
 	friend std::ostream& operator<<(std::ostream& out, const Card& card)
 	{
-		static constexpr std::array<char, Deck::max_ranks> ranks{ 'A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K' };
-		static constexpr std::array<char, Deck::max_suits> suits{ 'C', 'D', 'H', 'S' };
+		static constexpr std::array<char, Cards::max_ranks> ranks{ 'A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K' };
+		static constexpr std::array<char, Cards::max_suits> suits{ 'C', 'D', 'H', 'S' };
 
 		out << ranks[card.rank] << suits[card.suit];
 		return out;
 	}
 
 };
+
+class Deck
+{
+private:
+	std::vector<Card> cards;
+
+
+public:
+	Deck()
+		: cards{ makeDeck() }
+	{}
+
+	//before calling this function it should be checked that the deck still has cards
+	Card dealCard()
+	{
+	
+		Card dealtCard{ cards.back() };
+		cards.pop_back();
+		return dealtCard;
+	
+
+	}
+
+	void shuffle()
+	{
+		static std::random_device rd{};                                               
+		static std::seed_seq ss{ rd(), rd(), rd(), rd(), rd(), rd(), rd(), rd() };    
+		static std::mt19937 engine(ss);
+		std::shuffle(cards.begin(), cards.end(), engine);
+	}
+
+
+
+};
+
+
+int32_t rankValue(Cards::Rank rank)
+{
+	return Cards::rankValues[rank];
+
+
+}
+
+std::vector<Card> makeDeck()
+{
+	std::vector<Card> cards{};
+	for (const auto& i : Cards::allSuits)
+	{
+		for (const auto& j : Cards::allRanks)
+		{
+			cards.push_back(Card(j, i));
+		}
+
+	}
+	return cards;
+}
 
 
 
