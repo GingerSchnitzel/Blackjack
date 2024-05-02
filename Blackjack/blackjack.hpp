@@ -68,17 +68,17 @@ public:
 
 	}
 
-	Cards::Rank getRank()
+	Cards::Rank getRank() const
 	{
 		return rank;
 	}
 
-	Cards::Suit getSuit()
+	Cards::Suit getSuit() const
 	{
 		return suit;
 	}
 
-	int32_t getValue()
+	int32_t getValue() const
 	{
 		return value;
 	}
@@ -150,6 +150,46 @@ std::vector<Card> makeDeck()
 	}
 	return cards;
 }
+
+
+
+
+class Player
+{
+private:
+	std::vector<Card> hand;
+	
+public:
+
+	Player()
+		: hand {}
+		
+	{}
+
+	void addCard(const Card& card)
+	{
+		hand.push_back(card);
+	}
+
+	void printHand()
+	{
+		for (const auto& card : hand)
+		{
+			std::cout << card << ' ';
+		}
+		std::cout << '\n';
+	}
+
+	int32_t calculateScore()
+	{
+		int32_t score{};
+		for (const auto& card : hand)
+		{
+			score += card.getValue();
+		}
+		return score;
+	}
+};
 
 
 
