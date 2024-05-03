@@ -211,7 +211,14 @@ public:
 		int32_t score{};
 		for (const auto& card : hand)
 		{
+			if (card.getRank() == Cards::rank_ace && (score + card.getValue()) > Settings::bust )
+			{
+				score += 1;
+			}
+			else
+			{ 
 			score += card.getValue();
+			}
 		}
 		return score;
 	}
