@@ -6,6 +6,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <string>
 
 
 
@@ -47,6 +48,14 @@ namespace Cards
 	static constexpr std::array<int32_t, Cards::max_ranks> rankValues{ 11, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10 };
 
 }
+
+namespace Settings
+{
+	constexpr int32_t bust{ 21 };
+	constexpr int32_t dealerStop{ 17 };
+}
+
+
 class Card;
 int32_t rankValue(Cards::Rank rank);
 std::vector<Card> makeDeck();
@@ -109,18 +118,18 @@ public:
 	//before calling this function it should be checked that the deck still has cards
 	Card dealCard()
 	{
-	
+
 		Card dealtCard{ cards.back() };
 		cards.pop_back();
 		return dealtCard;
-	
+
 
 	}
 
 	void shuffle()
 	{
-		static std::random_device rd{};                                               
-		static std::seed_seq ss{ rd(), rd(), rd(), rd(), rd(), rd(), rd(), rd() };    
+		static std::random_device rd{};
+		static std::seed_seq ss{ rd(), rd(), rd(), rd(), rd(), rd(), rd(), rd() };
 		static std::mt19937 engine(ss);
 		std::shuffle(cards.begin(), cards.end(), engine);
 	}
@@ -158,13 +167,20 @@ class Player
 {
 private:
 	std::vector<Card> hand;
-	
+	std::string name;
+
 public:
 
-	Player()
-		: hand {}
-		
+	Player(const std::string& name)
+		: hand{}
+		, name{ name }
+
 	{}
+
+	const std::string& getName () const
+	{
+		return name;
+	}
 
 	void addCard(const Card& card)
 	{
@@ -173,6 +189,8 @@ public:
 
 	void printHand()
 	{
+		std::cout << name << "'s hand: ";
+
 		for (const auto& card : hand)
 		{
 			std::cout << card << ' ';
@@ -180,8 +198,16 @@ public:
 		std::cout << '\n';
 	}
 
+	void printFirstDealerHand()
+	{
+		std::cout << name << "'s hand: ";
+		std::cout << hand[0] << ' ';
+		std::cout << '?' << '\n';
+	}
+
 	int32_t calculateScore()
 	{
+
 		int32_t score{};
 		for (const auto& card : hand)
 		{
@@ -189,7 +215,180 @@ public:
 		}
 		return score;
 	}
+
+	void printScore()
+	{
+		std::cout << name << "'s score is: " << calculateScore() << '\n';
+
+	}
+
+	bool goneBust()
+	{
+		if (calculateScore() > Settings::bust)
+		{
+			return true;
+		}
+		return false;
+	}
+
 };
+
+namespace Settings
+{
+
+	bool dealerTurn(Deck& deck, Player& dealer)
+	{
+		dealer.printHand();
+		dealer.printScore();
+		while (dealer.calculateScore() < dealerStop)
+		{
+			Card card{ deck.dealCard() };
+			dealer.addCard(card);
+			std::cout << "The dealer flips a " << card << ".  They now have: " << dealer.calculateScore() << '\n';
+		}
+
+		if (dealer.goneBust())
+		{
+			std::cout << "The dealer went bust!\n";
+			return true;
+		}
+
+		return false;
+	}
+
+}
+
+
+namespace Session
+{
+	bool hitOrStand()
+	{
+		std::cout << "(H)it or (S)tand? \n";
+		while (true)
+		{
+			char answer{};
+			std::cin >> answer;
+
+			if (std::cin.fail())
+			{
+				std::cin.clear();
+				std::cout << "That wasn't a valid input. Please try again.\n";
+				std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+				continue;
+			}
+
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+			if (answer != 'H' && answer != 'S'  && answer != 'h' && answer != 's')
+			{
+				std::cout << "That wasn't a valid input. Please try again.\n";
+				continue;
+			}
+
+			if (answer == 'H' || answer == 'h')
+			{
+				return true;
+			}
+
+			if (answer == 'S' || answer == 's')
+			{
+				return false;
+			}
+
+		}
+	}
+	bool playAgain()
+	{
+		std::cout << "Would you like to play again?";
+		std::string answer;
+
+		while (true)
+		{
+			std::cout << " y/n? ";
+
+			std::getline(std::cin, answer);
+
+			if (answer.length() != 1)
+			{
+				continue;
+			}
+
+			switch (answer[0])
+			{
+			case 'y':
+			case'Y':
+				std::cout << '\n';
+				return true;
+
+			case 'N':
+			case'n':
+
+				std::cout << "Thank you for playing! \n";
+				return false;
+			}
+		}
+	}
+
+	void playBlackjack()
+	{
+		Deck deck{};
+		deck.shuffle();
+
+		Player dealer{ "Dealer" };
+		Player player{ "Player" };
+
+		dealer.addCard(deck.dealCard());
+		player.addCard(deck.dealCard());
+
+		player.addCard(deck.dealCard());
+		dealer.addCard(deck.dealCard());
+
+		dealer.printFirstDealerHand();
+		player.printHand();
+		player.printScore();
+
+		while (player.calculateScore() < Settings::bust)
+		{
+			if (hitOrStand())
+			{
+				player.addCard(deck.dealCard());
+				player.printHand();
+				player.printScore();
+
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		if (player.goneBust())
+		{
+			std::cout << player.getName() << " went bust! \n";
+			std::cout << "Dealer wins!\n";
+			return;
+		}
+
+		if (Settings::dealerTurn(deck, dealer))
+		{
+			std::cout << player.getName() << " wins! \n";
+			return;
+		}
+
+		if (dealer.calculateScore() > player.calculateScore())
+		{
+			std::cout << "Dealer wins!\n";
+			return;
+		}
+		else
+		{
+			std::cout << player.getName() << " wins! \n";
+			return;
+		}
+
+
+	}
+}
 
 
 
