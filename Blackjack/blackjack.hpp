@@ -209,16 +209,23 @@ public:
 	{
 
 		int32_t score{};
+		int32_t aceCount{};
 		for (const auto& card : hand)
 		{
-			if (card.getRank() == Cards::rank_ace && (score + card.getValue()) > Settings::bust )
+			if (card.getRank() == Cards::rank_ace)
 			{
-				score += 1;
+				++aceCount;
+
 			}
-			else
-			{ 
+			
 			score += card.getValue();
-			}
+		
+		}
+
+		while (score > Settings::bust && aceCount > 0)
+		{
+			score -= 10;
+			--aceCount;
 		}
 		return score;
 	}
@@ -304,6 +311,7 @@ namespace Session
 
 		}
 	}
+
 	bool playAgain()
 	{
 		std::cout << "Would you like to play again?";
@@ -339,14 +347,14 @@ namespace Session
 	void playBlackjack()
 	{
 		Deck deck{};
-		deck.shuffle();
+		//deck.shuffle();
 
 		Player dealer{ "Dealer" };
 		Player player{ "Player" };
 
 		dealer.addCard(deck.dealCard());
-		player.addCard(deck.dealCard());
-
+		//player.addCard(deck.dealCard());
+		
 		player.addCard(deck.dealCard());
 		dealer.addCard(deck.dealCard());
 
